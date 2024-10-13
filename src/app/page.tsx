@@ -1,101 +1,133 @@
-import Image from "next/image";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [gcServers, setGcServers] = useState<any[]>([]);
+  const [fireGameServers, setFireGameServers] = useState<any[]>([]);
+  const [types, setTypes] = useState([]);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  const [filter, setFilter] = useState("Deathmatch");
+  const [refresh, setRefresh] = useState(false);
+
+  useEffect(() => {
+    fetch("https://gamersclub.com.br/api/servers?server-type=CS2&items=30", {
+      method: "POST",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setGcServers(data.servers);
+
+        const serversTypes = data.servers.reduce(
+          (acc: any[], server: { mode_name: any }) => {
+            if (!acc.includes(server.mode_name)) {
+              acc.push(server.mode_name);
+            }
+            return acc;
+          },
+          []
+        );
+
+        setTypes(serversTypes);
+      });
+
+    fetch("https://api.firegamesnetwork.com/servers?gamemode=retakes")
+      .then((res) => res.json())
+      .then((data) => setFireGameServers(data));
+  }, [refresh]);
+
+  function handleCopyServer(text: string) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textArea);
+  }
+
+  console.log(gcServers);
+  console.log({ fireGameServers });
+
+  return (
+    <div className="w-full gap-2 flex flex-col items-center justify-items-center min-h-screen p-8 pb-20  font-[family-name:var(--font-geist-sans)]">
+      <button
+        className="bg-gray-800 text-white px-2 py-1 rounded-md ml-4"
+        onClick={() => setRefresh(!refresh)}
+      >
+        refresh
+      </button>
+      <div className="w-full gap-2">
+        {types.map((server) => (
+          <button
+            key={server}
+            className="bg-gray-800 text-white px-2 py-1 rounded-md ml-4"
+            onClick={() => setFilter(server)}
           >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+            {server}
+          </button>
+        ))}
+      </div>
+
+      {filter === "Retake" && (
+        <div className="w-full gap-2 flex flex-col items-center justify-items-center">
+          <h2>FIRE GAME SERVERS</h2>
+          {fireGameServers?.map((server, i) => (
+            <div key={i} className="w-full p-4 bg-gray-900 rounded-md">
+              <div className="flex flex-col gap-2">
+                <h3 className="text-lg font-semibold">{server.name}</h3>
+                <p>
+                  {server.connect}
+                  <button
+                    className="bg-gray-800 text-white px-2 py-1 rounded-md ml-4"
+                    onClick={() =>
+                      handleCopyServer(`connect ${server.connect}`)
+                    }
+                  >
+                    Copy
+                  </button>
+                </p>
+              </div>
+              <div className="flex flex-col gap-2">
+                <p>
+                  players: {server.maxPlayers} / {server.playersLength}
+                </p>
+                <p>map: {server.map}</p>
+              </div>
+            </div>
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      )}
+
+      <h2>GC SERVERS</h2>
+      {gcServers
+        ?.sort((a, b) => a.mode_name.localeCompare(b.mode_name))
+        ?.filter((server) => server.mode_name === filter)
+        ?.map((server) => (
+          <div key={server.id} className="w-full p-4 bg-gray-900 rounded-md">
+            <div className="flex flex-col gap-2">
+              <h3 className="text-lg font-semibold">{server.name}</h3>
+              <p>
+                {server.ip}: {server.port}
+                <button
+                  className="bg-gray-800 text-white px-2 py-1 rounded-md ml-4"
+                  onClick={() =>
+                    handleCopyServer(`connect ${server.ip}:${server.port}`)
+                  }
+                >
+                  Copy
+                </button>
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <p>
+                players: {server.slots_used} / {server.slots}
+              </p>
+              <p>map: {server.map_name}</p>
+            </div>
+          </div>
+        ))}
+
+      <hr />
     </div>
   );
 }
